@@ -1,7 +1,7 @@
 // rollup.config.js
 import resolve from '@rollup/plugin-node-resolve';
 import terser from '@rollup/plugin-terser';
-import string from 'rollup-plugin-string';
+import { string } from 'rollup-plugin-string';
 
 export default {
   input: 'power-flow-card.js',
@@ -14,7 +14,10 @@ export default {
     string({
       include: '**/*.svg',
     }),
-    resolve(),
+    resolve({
+      browser: true,
+      preferBuiltins: false,
+    }),
     terser(),
   ],
 };

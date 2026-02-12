@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Power Flow Card Test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #0d0d0d;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    #container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="container"></div>
+  
+  <script type="module">
+    import './dist/power-flow-card.js';
+    
+    const card = document.createElement('power-flow-card');
+    
+    card.setConfig({
+      name: 'Home Energy Flow',
+      threshold: 10,
+      entities: {
+        solar_power: 'sensor.solar',
+        grid_import_power: 'sensor.grid_import',
+        grid_export_power: 'sensor.grid_export'
+      }
+    });
+    
+    card.hass = {
+      states: {
+        'sensor.solar': { 
+          state: '1500', 
+          attributes: { unit_of_measurement: 'W' } 
+        },
+        'sensor.grid_import': { 
+          state: '500', 
+          attributes: { unit_of_measurement: 'W' } 
+        },
+        'sensor.grid_export': { 
+          state: '200', 
+          attributes: { unit_of_measurement: 'W' } 
+        }
+      }
+    };
+    
+    document.getElementById('container').appendChild(card);
+  </script>
+</body>
+</html>

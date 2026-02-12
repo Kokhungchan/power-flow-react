@@ -1,24 +1,29 @@
 {
-  "name": "power-flow-card",
-  "version": "1.0.0",
+  "name": "power-flow-card-ha",
+  "version": "1.0.2",
   "description": "Power Flow visualisation card for Home Assistant Lovelace",
   "type": "module",
-  "main": "power-flow-card.js",
+  "main": "dist/power-flow-card.js",
+  "files": [
+    "dist"
+  ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/LordGuenni/power-flow-card"
+    "url": "https://github.com/Kokhungchan/power-flow"
   },
   "keywords": [
     "lovelace",
     "custom-card",
-    "frontend"
+    "frontend",
+    "home-assistant",
+    "energy"
   ],
   "author": "Your Name",
   "license": "MIT",
   "scripts": {
     "lint": "eslint . --ext .js",
     "build": "rollup -c --bundleConfigAsCjs",
-    "release": "npm run build && npm run lint"
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16.0.3",
@@ -31,5 +36,8 @@
     "prettier": "^3.6.2",
     "rollup": "^4.53.2",
     "rollup-plugin-string": "^3.0.0"
+  },
+  "dependencies": {
+    "lit": "^3.3.2"
   }
 }

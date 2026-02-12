@@ -1,4 +1,4 @@
-import { LitElement, html, css } from "https://unpkg.com/lit?module";
+import { LitElement, html, css } from "lit";
 
 class PowerFlowCard extends LitElement {
   static get properties() {
@@ -414,9 +414,20 @@ class PowerFlowCard extends LitElement {
 
   static get styles() {
     return css`
-      /* Card Container Setup */
       :host {
         display: block;
+      }
+      .pf-card {
+        background: var(--card-background-color, #1c1c1c);
+        border-radius: 8px;
+        padding: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      }
+      .pf-header {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        color: var(--primary-text-color, #fff);
       }
       .pf-wrapper {
         position: relative;
@@ -460,7 +471,7 @@ class PowerFlowCard extends LitElement {
         padding: 0 24px;
         font-size: 12px;
         font-weight: 500;
-        color: var(--secondary-text-color);
+        color: var(--secondary-text-color, #aaa);
         z-index: 2;
         pointer-events: none;
       }
@@ -502,7 +513,7 @@ class PowerFlowCard extends LitElement {
       .pf-label-value {
         font-size: 16px;
         font-weight: 600;
-        color: var(--primary-text-color);
+        color: var(--primary-text-color, #fff);
         line-height: 1;
         max-width: 100%;
         overflow: hidden;
@@ -512,7 +523,7 @@ class PowerFlowCard extends LitElement {
       .pf-label-text {
         font-size: 12px;
         font-weight: 400;
-        color: var(--secondary-text-color);
+        color: var(--secondary-text-color, #aaa);
         line-height: 1;
         max-width: 100%;
         overflow: hidden;
@@ -521,16 +532,12 @@ class PowerFlowCard extends LitElement {
       }
       .pf-loading {
         padding: 16px;
-        color: var(--secondary-text-color);
+        color: var(--secondary-text-color, #aaa);
         text-align: center;
       }
-
-      /* Background Styling */
       #svg-container-bg svg {
         opacity: 0.5;
       }
-
-      /* Animated Line Styles */
       .anim-line {
         filter: url(#glow);
         stroke-width: 5px;
@@ -542,12 +549,9 @@ class PowerFlowCard extends LitElement {
         stroke-linecap: round;
         stroke-opacity: 0.95;
       }
-
       .reverse-flow {
         --dash-dir: 280;
       }
-
-      /* Animation State Controls */
       .flow-active {
         animation-play-state: running !important;
         opacity: 1 !important;
@@ -560,29 +564,11 @@ class PowerFlowCard extends LitElement {
         animation-play-state: paused !important;
         opacity: 0 !important;
       }
-
       @keyframes dash-move {
         to {
           stroke-dashoffset: var(--dash-dir);
         }
       }
-
-      @keyframes pulse {
-        0% {
-          stroke-opacity: 0.7;
-          filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.2));
-        }
-        50% {
-          stroke-opacity: 1;
-          filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.5));
-        }
-        100% {
-          stroke-opacity: 0.7;
-          filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.2));
-        }
-      }
-
-      /* Color definitions (these apply classes to the SVG paths) */
       .solar {
         stroke: gold !important;
       }
@@ -591,7 +577,7 @@ class PowerFlowCard extends LitElement {
       }
       .grid-export {
         stroke: limegreen !important;
-      } /* <-- Needs 'grid-export' (dash) */
+      }
       .ev {
         stroke: deepskyblue !important;
       }
@@ -601,10 +587,9 @@ class PowerFlowCard extends LitElement {
     `;
   }
 
-  // 7. HTML Template (The card structure)
   render() {
     if (!this.config || !this.config.entities) {
-      return html`<ha-card><div class="pf-loading">Loading…</div></ha-card>`;
+      return html`<div class="pf-card"><div class="pf-loading">Loading…</div></div>`;
     }
     const title = this.config?.name?.trim();
     const gridImportDaily = this.getEntityStateValue(
@@ -623,65 +608,34 @@ class PowerFlowCard extends LitElement {
     const solarText = this.formatValue(solar?.value, solar?.unit);
     const exportText = this.formatValue(exportState?.value, exportState?.unit);
     return html`
-      ${title
-        ? html`
-            <ha-card header="${title}">
-              <div class="pf-wrapper">
-                <div class="pf-labels">
-                  <div class="pf-label pf-label-grid">
-                    <div class="pf-label-value">${gridText}</div>
-                    <div class="pf-label-text">Grid</div>
-                  </div>
-                  <div class="pf-label pf-label-solar">
-                    <div class="pf-label-value">${solarText}</div>
-                    <div class="pf-label-text">Solar Panel</div>
-                  </div>
-                  <div class="pf-label pf-label-export">
-                    <div class="pf-label-value">${exportText}</div>
-                    <div class="pf-label-text">Export</div>
-                  </div>
-                </div>
-                <div id="svg-overlay">
-                  <div id="svg-container-bg"></div>
-                  <div id="svg-container-solar"></div>
-                  <div id="svg-container-battery"></div>
-                  <div id="svg-container-ev"></div>
-                <div id="svg-container-primary"></div>
-                <div id="svg-container-out"></div>
-                <div id="svg-container-fg"></div>
-                </div>
-              </div>
-            </ha-card>
-          `
-        : html`
-            <ha-card>
-              <div class="pf-wrapper">
-                <div class="pf-labels">
-                  <div class="pf-label pf-label-grid">
-                    <div class="pf-label-value">${gridText}</div>
-                    <div class="pf-label-text">Grid</div>
-                  </div>
-                  <div class="pf-label pf-label-solar">
-                    <div class="pf-label-value">${solarText}</div>
-                    <div class="pf-label-text">Solar Panel</div>
-                  </div>
-                  <div class="pf-label pf-label-export">
-                    <div class="pf-label-value">${exportText}</div>
-                    <div class="pf-label-text">Export</div>
-                  </div>
-                </div>
-                <div id="svg-overlay">
-                  <div id="svg-container-bg"></div>
-                  <div id="svg-container-solar"></div>
-                  <div id="svg-container-battery"></div>
-                  <div id="svg-container-ev"></div>
-                  <div id="svg-container-primary"></div>
-                  <div id="svg-container-out"></div>
-                  <div id="svg-container-fg"></div>
-                </div>
-              </div>
-            </ha-card>
-          `}
+      <div class="pf-card">
+        ${title ? html`<div class="pf-header">${title}</div>` : ''}
+        <div class="pf-wrapper">
+          <div class="pf-labels">
+            <div class="pf-label pf-label-grid">
+              <div class="pf-label-value">${gridText}</div>
+              <div class="pf-label-text">Grid</div>
+            </div>
+            <div class="pf-label pf-label-solar">
+              <div class="pf-label-value">${solarText}</div>
+              <div class="pf-label-text">Solar Panel</div>
+            </div>
+            <div class="pf-label pf-label-export">
+              <div class="pf-label-value">${exportText}</div>
+              <div class="pf-label-text">Export</div>
+            </div>
+          </div>
+          <div id="svg-overlay">
+            <div id="svg-container-bg"></div>
+            <div id="svg-container-solar"></div>
+            <div id="svg-container-battery"></div>
+            <div id="svg-container-ev"></div>
+            <div id="svg-container-primary"></div>
+            <div id="svg-container-out"></div>
+            <div id="svg-container-fg"></div>
+          </div>
+        </div>
+      </div>
     `;
   }
 }

@@ -1,0 +1,8 @@
+node_modules
+src
+.git
+.gitignore
+*.log
+.DS_Store
+rollup.config.js
+.eslintrc.js
