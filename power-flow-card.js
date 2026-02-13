@@ -107,12 +107,29 @@ class PowerFlowCard extends LitElement {
       );
       defs.innerHTML = `
                 <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="2.5" result="blur"/>
+                    <feGaussianBlur stdDeviation="4" result="blur"/>
                     <feMerge>
+                        <feMergeNode in="blur"/>
                         <feMergeNode in="blur"/>
                         <feMergeNode in="SourceGraphic"/>
                     </feMerge>
-                </filter>`;
+                </filter>
+                <filter id="house-shadow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur in="SourceAlpha" stdDeviation="8"/>
+                    <feOffset dx="0" dy="10" result="offsetblur"/>
+                    <feComponentTransfer>
+                        <feFuncA type="linear" slope="0.5"/>
+                    </feComponentTransfer>
+                    <feMerge>
+                        <feMergeNode/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+                <radialGradient id="window-glow">
+                    <stop offset="0%" stop-color="#fffef0" stop-opacity="1"/>
+                    <stop offset="50%" stop-color="#ffd700" stop-opacity="0.9"/>
+                    <stop offset="100%" stop-color="#cc9900" stop-opacity="0.7"/>
+                </radialGradient>`;
       svgEl.insertBefore(defs, svgEl.firstChild);
     }
   }
@@ -211,6 +228,32 @@ class PowerFlowCard extends LitElement {
         containerEl.innerHTML = text;
         const bgSvg = containerEl.querySelector("svg");
         if (bgSvg && this.foregroundContainer) {
+          this.ensureGlow(bgSvg);
+          
+          // Apply shadow to house elements
+          const houseElements = bgSvg.querySelectorAll('#house, #roof, #roof-garage');
+          houseElements.forEach(el => {
+            el.style.filter = 'url(#house-shadow)';
+          });
+          
+          // Change solar panel color
+          const solarPanels = bgSvg.querySelectorAll('#solar path');
+          solarPanels.forEach(panel => {
+            panel.style.fill = '#62626e';
+          });
+          
+          // Change roof color
+          const roofElements = bgSvg.querySelectorAll('#roof path');
+          roofElements.forEach(roof => {
+            roof.style.fill = '#393a46';
+          });
+          
+          // Change house color
+          const houseBody = bgSvg.querySelectorAll('#house path');
+          houseBody.forEach(house => {
+            house.style.fill = '#363743';
+          });
+          
           const inverter = bgSvg.querySelector("#inverter");
           if (inverter) {
             const fgSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -244,18 +287,22 @@ class PowerFlowCard extends LitElement {
     }
   }
 
-  loadAllSVGs() {
-    this.lineConfig.forEach((cfg) => {
+  async loadAllSVGs() {
+    const promises = this.lineConfig.map((cfg) => {
       const pathKey = cfg.pathKey || cfg.type;
       const path = this.svgPaths[pathKey];
-
       const containerId = cfg.container || cfg.id;
       const container = this.lineContainers[containerId];
 
       if (path && container) {
-        this.loadSVG(path, container, cfg.type, cfg.isBackground);
+        return this.loadSVG(path, container, cfg.type, cfg.isBackground);
       }
+      return Promise.resolve();
     });
+    await Promise.all(promises);
+    if (this._hass) {
+      this.updateFlow();
+    }
   }
 
   updateFlow() {
@@ -337,6 +384,15 @@ class PowerFlowCard extends LitElement {
         this.loadAllSVGs();
       }
     }
+    if (config.styles) {
+      this.applyCustomStyles(config.styles);
+    }
+  }
+
+  applyCustomStyles(styles) {
+    Object.entries(styles).forEach(([key, value]) => {
+      this.style.setProperty(`--pf-${key}`, value);
+    });
   }
 
   getEntityStateValue(entityId, attribute) {
@@ -418,30 +474,47 @@ class PowerFlowCard extends LitElement {
         display: block;
       }
       .pf-card {
-        background: var(--card-background-color, #1c1c1c);
-        border-radius: 8px;
-        padding: 16px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        background: var(--pf-card-background, rgba(255, 255, 255, 0.05));
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: var(--pf-card-border-radius, 24px);
+        padding: var(--pf-card-padding, 16px);
+        box-shadow: var(--pf-card-shadow, 0 8px 32px rgba(0, 0, 0, 0.3));
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        position: relative;
+        overflow: hidden;
+      }
+      .pf-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
       }
       .pf-header {
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 16px;
-        color: var(--primary-text-color, #fff);
+        font-size: var(--pf-header-font-size, 20px);
+        font-weight: var(--pf-header-font-weight, 700);
+        margin-bottom: var(--pf-header-margin-bottom, 16px);
+        color: var(--pf-header-color, var(--primary-text-color, #fff));
+        text-align: center;
+        letter-spacing: -0.5px;
       }
       .pf-wrapper {
         position: relative;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        padding-top: 36px;
+        padding-top: 100px;
+        min-height: 280px;
       }
       #svg-overlay {
         position: relative;
         width: 100%;
-        height: 280px;
+        height: 200px;
         pointer-events: none;
-        padding: 28px 16px 4px;
+        padding: 16px 8px 4px;
         box-sizing: border-box;
       }
       #svg-overlay > div {
@@ -468,12 +541,19 @@ class PowerFlowCard extends LitElement {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         align-items: start;
-        padding: 0 24px;
+        padding: 0 12px;
+        gap: 8px;
         font-size: 12px;
         font-weight: 500;
         color: var(--secondary-text-color, #aaa);
         z-index: 2;
         pointer-events: none;
+      }
+      @media (min-width: 768px) {
+        .pf-labels {
+          padding: 0 24px;
+          gap: 16px;
+        }
       }
       .pf-label {
         position: relative;
@@ -483,57 +563,134 @@ class PowerFlowCard extends LitElement {
         gap: 4px;
         text-align: center;
         min-width: 0;
-        padding-bottom: 58px;
+        padding: 12px 8px;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        transition: all 0.3s ease;
+      }
+      @media (min-width: 768px) {
+        .pf-label {
+          gap: 8px;
+          padding: 16px;
+          border-radius: 16px;
+        }
+      }
+      .pf-label:hover {
+        background: rgba(255, 255, 255, 0.06);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
       }
       .pf-label::after {
-        content: "";
+        content: '';
         position: absolute;
-        top: 38px;
+        top: 100%;
         left: 50%;
         transform: translateX(-50%);
-        width: 1px;
-        height: 50px;
-        background: var(--divider-color, rgba(255, 255, 255, 0.2));
+        width: 2px;
+        height: 60px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent);
       }
       .pf-label-grid::after {
-        background: dodgerblue;
-        opacity: 0.5;
-        height: 70px;
+        background: linear-gradient(180deg, rgba(30, 144, 255, 0.5), transparent);
+      }
+      .pf-label-grid {
+        border-color: rgba(30, 144, 255, 0.3);
       }
       .pf-label-solar::after {
-        background: gold;
-        opacity: 0.5;
-        height: 45px;
+        background: linear-gradient(180deg, rgba(255, 215, 0, 0.5), transparent);
+      }
+      .pf-label-solar {
+        border-color: rgba(255, 215, 0, 0.3);
       }
       .pf-label-export::after {
-        background: limegreen;
-        opacity: 0.5;
-        height: 53px;
+        background: linear-gradient(180deg, rgba(50, 205, 50, 0.5), transparent);
+      }
+      .pf-label-export {
+        border-color: rgba(50, 205, 50, 0.3);
       }
       .pf-label-value {
-        font-size: 16px;
-        font-weight: 600;
-        color: var(--primary-text-color, #fff);
-        line-height: 1;
+        font-size: var(--pf-label-value-font-size, 18px);
+        font-weight: var(--pf-label-value-font-weight, 700);
+        color: var(--pf-label-value-color, var(--primary-text-color, #fff));
+        line-height: 1.2;
         max-width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        letter-spacing: -0.5px;
+      }
+      .pf-label-value::after {
+        content: attr(data-unit);
+        font-size: 0.6em;
+        font-weight: 500;
+        opacity: 0.7;
+        margin-left: 2px;
+      }
+      @media (min-width: 768px) {
+        .pf-label-value {
+          font-size: var(--pf-label-value-font-size, 24px);
+        }
       }
       .pf-label-text {
-        font-size: 12px;
-        font-weight: 400;
-        color: var(--secondary-text-color, #aaa);
-        line-height: 1;
+        font-size: var(--pf-label-text-font-size, 9px);
+        font-weight: var(--pf-label-text-font-weight, 500);
+        color: var(--pf-label-text-color, rgba(255, 255, 255, 0.6));
+        line-height: 1.2;
         max-width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      @media (min-width: 768px) {
+        .pf-label-text {
+          font-size: var(--pf-label-text-font-size, 11px);
+          letter-spacing: 0.5px;
+        }
       }
       .pf-loading {
         padding: 16px;
         color: var(--secondary-text-color, #aaa);
         text-align: center;
+      }
+      .pf-house-usage {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: -20px;
+        padding: 12px 20px;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        width: fit-content;
+        margin-left: auto;
+        margin-right: auto;
+        position: relative;
+        z-index: 3;
+      }
+      .pf-house-icon {
+        font-size: 24px;
+        line-height: 1;
+        color: #ffd700;
+      }
+      .pf-house-value {
+        font-size: 20px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.5px;
+      }
+      .pf-house-text {
+        font-size: 10px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.5);
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
       }
       #svg-container-bg svg {
         opacity: 0.5;
@@ -544,6 +701,7 @@ class PowerFlowCard extends LitElement {
       }
       .flow-stream {
         stroke-dasharray: 80 200;
+        stroke-dashoffset: 0;
         animation: dash-move var(--flow-duration, 4.8s) linear infinite;
         --dash-dir: -280;
         stroke-linecap: round;
@@ -565,24 +723,27 @@ class PowerFlowCard extends LitElement {
         opacity: 0 !important;
       }
       @keyframes dash-move {
+        from {
+          stroke-dashoffset: 0;
+        }
         to {
           stroke-dashoffset: var(--dash-dir);
         }
       }
       .solar {
-        stroke: gold !important;
+        stroke: var(--pf-solar-color, gold) !important;
       }
       .grid-import {
-        stroke: dodgerblue !important;
+        stroke: var(--pf-grid-import-color, dodgerblue) !important;
       }
       .grid-export {
-        stroke: limegreen !important;
+        stroke: var(--pf-grid-export-color, limegreen) !important;
       }
       .ev {
-        stroke: deepskyblue !important;
+        stroke: var(--pf-ev-color, deepskyblue) !important;
       }
       .bat-charge {
-        stroke: cornflowerblue !important;
+        stroke: var(--pf-battery-color, cornflowerblue) !important;
       }
     `;
   }
@@ -604,9 +765,16 @@ class PowerFlowCard extends LitElement {
     const gridUnit = gridImportDaily?.unit || gridImport?.unit || gridExport?.unit || "";
     const solar = this.getEntityStateValue(this.config?.entities?.solar_power);
     const exportState = this.getEntityStateValue(this.config?.entities?.grid_export_power);
+    
+    // Calculate house usage: grid_import + solar - grid_export
+    const houseUsage = (gridImport?.value ?? 0) + (solar?.value ?? 0) - (gridExport?.value ?? 0);
+    const houseUnit = solar?.unit || gridUnit;
+    
     const gridText = this.formatValue(gridValue, gridUnit);
     const solarText = this.formatValue(solar?.value, solar?.unit);
     const exportText = this.formatValue(exportState?.value, exportState?.unit);
+    const houseText = this.formatValue(houseUsage, houseUnit);
+    
     return html`
       <div class="pf-card">
         ${title ? html`<div class="pf-header">${title}</div>` : ''}
@@ -633,6 +801,13 @@ class PowerFlowCard extends LitElement {
             <div id="svg-container-primary"></div>
             <div id="svg-container-out"></div>
             <div id="svg-container-fg"></div>
+          </div>
+          <div class="pf-house-usage">
+            <div class="pf-house-icon">${this.config?.house_icon || '⚡'}</div>
+            <div>
+              <div class="pf-house-value">${houseText}</div>
+              <div class="pf-house-text">House Usage</div>
+            </div>
           </div>
         </div>
       </div>

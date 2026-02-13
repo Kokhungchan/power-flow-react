@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Power Flow Card Preview - Glassmorphism</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 40px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      max-width: 800px;
+      width: 100%;
+    }
+    h1 {
+      color: white;
+      text-align: center;
+      margin-bottom: 32px;
+      font-size: 32px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>✨ Glassmorphism Design Preview</h1>
+    <power-flow-card id="card"></power-flow-card>
+  </div>
+
+  <script type="module">
+    import './dist/power-flow-card.js';
+
+    const card = document.getElementById('card');
+    
+    card.setConfig({
+      name: 'Energy Flow',
+      threshold: 10,
+      entities: {
+        solar_power: 'sensor.solar_power',
+        grid_import_power: 'sensor.grid_import',
+        grid_export_power: 'sensor.grid_export',
+      },
+      styles: {
+        'card-background': 'rgba(255, 255, 255, 0.05)',
+        'card-border-radius': '24px',
+        'header-color': '#ffffff',
+      }
+    });
+
+    setTimeout(() => {
+      card.hass = {
+        states: {
+          'sensor.solar_power': { state: '821', attributes: { unit_of_measurement: 'kW' } },
+          'sensor.grid_import': { state: '150', attributes: { unit_of_measurement: 'kW' } },
+          'sensor.grid_export': { state: '200', attributes: { unit_of_measurement: 'kW' } },
+        },
+      };
+      card.requestUpdate();
+    }, 100);
+  </script>
+</body>
+</html>
