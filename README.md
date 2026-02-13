@@ -44,6 +44,181 @@ import 'power-flow-card-ha';
    - URL: `/local/power-flow-card.js`
    - Type: **JavaScript Module**
 
+---
+
+## Usage in React
+
+### Basic Setup
+
+```jsx
+import React, { useEffect, useRef } from 'react';
+import 'power-flow-card-ha';
+
+function PowerFlowCard() {
+  const cardRef = useRef(null);
+
+  useEffect(() => {
+    if (cardRef.current) {
+      cardRef.current.setConfig({
+        name: 'Home Energy Flow',
+        threshold: 10,
+        entities: {
+          solar_power: 'sensor.solar_power',
+          grid_import_power: 'sensor.grid_import',
+          grid_export_power: 'sensor.grid_export',
+        },
+      });
+
+      // Mock Home Assistant object
+      cardRef.current.hass = {
+        states: {
+          'sensor.solar_power': { state: '2500', attributes: { unit_of_measurement: 'W' } },
+          'sensor.grid_import': { state: '500', attributes: { unit_of_measurement: 'W' } },
+          'sensor.grid_export': { state: '0', attributes: { unit_of_measurement: 'W' } },
+        },
+      };
+    }
+  }, []);
+
+  return <power-flow-card ref={cardRef} />;
+}
+
+export default PowerFlowCard;
+```
+
+### With Custom Styling
+
+```jsx
+import React, { useEffect, useRef } from 'react';
+import 'power-flow-card-ha';
+
+function PowerFlowCard() {
+  const cardRef = useRef(null);
+
+  useEffect(() => {
+    if (cardRef.current) {
+      cardRef.current.setConfig({
+        name: 'Energy Monitor',
+        threshold: 10,
+        entities: {
+          solar_power: 'sensor.solar_power',
+          grid_import_power: 'sensor.grid_import',
+          grid_export_power: 'sensor.grid_export',
+          battery_charge_power: 'sensor.battery_charge',
+          battery_discharge_power: 'sensor.battery_discharge',
+        },
+        styles: {
+          'solar-color': 'orange',
+          'grid-import-color': '#00aaff',
+          'battery-color': 'purple',
+          'card-background': '#2a2a2a',
+          'header-font-size': '20px',
+        },
+      });
+
+      cardRef.current.hass = {
+        states: {
+          'sensor.solar_power': { state: '3000', attributes: { unit_of_measurement: 'W' } },
+          'sensor.grid_import': { state: '200', attributes: { unit_of_measurement: 'W' } },
+          'sensor.grid_export': { state: '500', attributes: { unit_of_measurement: 'W' } },
+          'sensor.battery_charge': { state: '1000', attributes: { unit_of_measurement: 'W' } },
+          'sensor.battery_discharge': { state: '0', attributes: { unit_of_measurement: 'W' } },
+        },
+      };
+    }
+  }, []);
+
+  return <power-flow-card ref={cardRef} />;
+}
+
+export default PowerFlowCard;
+```
+
+### With Real-time Updates
+
+```jsx
+import React, { useEffect, useRef, useState } from 'react';
+import 'power-flow-card-ha';
+
+function PowerFlowCard({ solarPower, gridImport, gridExport }) {
+  const cardRef = useRef(null);
+
+  useEffect(() => {
+    if (cardRef.current) {
+      cardRef.current.setConfig({
+        name: 'Live Energy Flow',
+        threshold: 10,
+        entities: {
+          solar_power: 'sensor.solar_power',
+          grid_import_power: 'sensor.grid_import',
+          grid_export_power: 'sensor.grid_export',
+        },
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (cardRef.current) {
+      cardRef.current.hass = {
+        states: {
+          'sensor.solar_power': { state: String(solarPower), attributes: { unit_of_measurement: 'W' } },
+          'sensor.grid_import': { state: String(gridImport), attributes: { unit_of_measurement: 'W' } },
+          'sensor.grid_export': { state: String(gridExport), attributes: { unit_of_measurement: 'W' } },
+        },
+      };
+    }
+  }, [solarPower, gridImport, gridExport]);
+
+  return <power-flow-card ref={cardRef} />;
+}
+
+export default PowerFlowCard;
+```
+
+### TypeScript Support
+
+```tsx
+import React, { useEffect, useRef } from 'react';
+import 'power-flow-card-ha';
+
+interface PowerFlowCardElement extends HTMLElement {
+  setConfig: (config: any) => void;
+  hass: any;
+}
+
+function PowerFlowCard() {
+  const cardRef = useRef<PowerFlowCardElement>(null);
+
+  useEffect(() => {
+    if (cardRef.current) {
+      cardRef.current.setConfig({
+        name: 'Home Energy Flow',
+        threshold: 10,
+        entities: {
+          solar_power: 'sensor.solar_power',
+          grid_import_power: 'sensor.grid_import',
+          grid_export_power: 'sensor.grid_export',
+        },
+      });
+
+      cardRef.current.hass = {
+        states: {
+          'sensor.solar_power': { state: '2500', attributes: { unit_of_measurement: 'W' } },
+          'sensor.grid_import': { state: '500', attributes: { unit_of_measurement: 'W' } },
+          'sensor.grid_export': { state: '0', attributes: { unit_of_measurement: 'W' } },
+        },
+      };
+    }
+  }, []);
+
+  return <power-flow-card ref={cardRef} />;
+}
+
+export default PowerFlowCard;
+```
+
+---
+
 ## Configuration 
 
 Usage example in YAML:
