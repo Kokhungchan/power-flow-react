@@ -803,7 +803,7 @@ class PowerFlowCard extends LitElement {
             <div id="svg-container-fg"></div>
           </div>
           <div class="pf-house-usage">
-            <div class="pf-house-icon">${this.config?.house_icon || '⚡'}</div>
+            <div class="pf-house-icon" .innerHTML="${this.config?.house_icon || '⚡'}"></div>
             <div>
               <div class="pf-house-value">${houseText}</div>
               <div class="pf-house-text">House Usage</div>
