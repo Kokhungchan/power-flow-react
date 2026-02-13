@@ -475,23 +475,11 @@ class PowerFlowCard extends LitElement {
       }
       .pf-card {
         background: var(--pf-card-background, rgba(255, 255, 255, 0.05));
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
         border-radius: var(--pf-card-border-radius, 24px);
         padding: var(--pf-card-padding, 16px);
         box-shadow: var(--pf-card-shadow, 0 8px 32px rgba(0, 0, 0, 0.3));
-        border: 1px solid rgba(255, 255, 255, 0.1);
         position: relative;
         overflow: hidden;
-      }
-      .pf-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
       }
       .pf-header {
         font-size: var(--pf-header-font-size, 20px);
